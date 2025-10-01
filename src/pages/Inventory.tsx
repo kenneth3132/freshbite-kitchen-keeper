@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { FoodItem, ConsumedItem } from '@/lib/types';
 import { calculateDaysRemaining, getExpiryStatus, sortItemsByExpiry } from '@/lib/utils-food';
 import { categories, storageLocations } from '@/lib/mockData';
 import { toast } from 'sonner';
+import { detectCategory, suggestStorage, getQuantityPlaceholder, saveCustomMapping } from '@/lib/categorization';
 
 export default function Inventory() {
   const [items, setItems] = useState<FoodItem[]>([]);
@@ -26,6 +27,9 @@ export default function Inventory() {
   const [sortBy, setSortBy] = useState('expiry');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+  const [autoCategory, setAutoCategory] = useState<{ category: string; confidence: string } | null>(null);
+  const [autoStorage, setAutoStorage] = useState<{ storage: string; reason: string } | null>(null);
+  const [categoryChanged, setCategoryChanged] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -133,6 +137,9 @@ export default function Inventory() {
       storage: storageLocations[0],
       notes: '',
     });
+    setAutoCategory(null);
+    setAutoStorage(null);
+    setCategoryChanged(false);
   };
 
   const handleEdit = (item: FoodItem) => {
@@ -145,6 +152,8 @@ export default function Inventory() {
       storage: item.storage,
       notes: item.notes || '',
     });
+    setAutoCategory(null);
+    setAutoStorage(null);
     setIsAddDialogOpen(true);
   };
 
@@ -180,6 +189,47 @@ export default function Inventory() {
     
     loadItems();
     toast.success('Item marked as consumed and added to shopping list');
+  };
+
+  const handleNameChange = (name: string) => {
+    setFormData({ ...formData, name });
+    
+    if (name.length >= 2 && !editingItem) {
+      const result = detectCategory(name);
+      setAutoCategory({ category: result.category, confidence: result.confidence });
+      
+      // Auto-set category if not manually changed
+      if (!categoryChanged) {
+        setFormData(prev => ({ ...prev, category: result.category }));
+      }
+      
+      // Auto-suggest storage
+      const storageResult = suggestStorage(result.category, name);
+      setAutoStorage(storageResult);
+      setFormData(prev => ({ ...prev, storage: storageResult.storage }));
+    } else {
+      setAutoCategory(null);
+      setAutoStorage(null);
+    }
+  };
+
+  const handleCategoryChange = (category: string) => {
+    const wasAutoDetected = autoCategory !== null;
+    setFormData({ ...formData, category });
+    setCategoryChanged(true);
+    
+    // Update storage suggestion based on new category
+    if (formData.name) {
+      const storageResult = suggestStorage(category, formData.name);
+      setAutoStorage(storageResult);
+      setFormData(prev => ({ ...prev, storage: storageResult.storage }));
+    }
+    
+    // If user changed from auto-detected, save the learning
+    if (wasAutoDetected && autoCategory && autoCategory.category !== category) {
+      saveCustomMapping(formData.name, category);
+      toast.success(`Got it! I'll remember "${formData.name}" is a ${category} next time 👍`);
+    }
   };
 
   return (
@@ -347,15 +397,25 @@ export default function Inventory() {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Whole Milk"
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="e.g., Whole Milk, Aloo, Doodh"
                 required
               />
+              {autoCategory && !editingItem && (
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-muted-foreground">
+                    {autoCategory.confidence === 'high' ? 'Detected as' : 'Guessing:'}{' '}
+                    <span className="font-medium text-foreground">{autoCategory.category}</span>
+                    {autoCategory.confidence === 'high' ? ' ✓' : ' ?'}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
               <Label htmlFor="category">Category *</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+              <Select value={formData.category} onValueChange={handleCategoryChange}>
                 <SelectTrigger id="category">
                   <SelectValue />
                 </SelectTrigger>
@@ -370,6 +430,11 @@ export default function Inventory() {
                   ))}
                 </SelectContent>
               </Select>
+              {autoCategory && !editingItem && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {categoryChanged ? 'Manual selection will be remembered' : 'Auto-detected - change if incorrect'}
+                </p>
+              )}
             </div>
 
             <div>
@@ -378,7 +443,7 @@ export default function Inventory() {
                 id="quantity"
                 value={formData.quantity}
                 onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                placeholder="e.g., 1 liter, 500g"
+                placeholder={getQuantityPlaceholder(formData.category)}
                 required
               />
             </div>
@@ -411,6 +476,15 @@ export default function Inventory() {
                   ))}
                 </SelectContent>
               </Select>
+              {autoStorage && !editingItem && (
+                <div className="mt-2 flex items-center gap-2 text-sm">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-muted-foreground">
+                    Suggested: <span className="font-medium text-foreground">{autoStorage.storage}</span>
+                    {' '}({autoStorage.reason})
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
