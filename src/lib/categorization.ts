@@ -169,41 +169,71 @@ export function detectCategory(productName: string): CategoryResult {
 export function suggestStorage(category: string, productName: string): { storage: string; reason: string } {
   const normalized = productName.toLowerCase();
 
-  // Check for frozen items
+  // PRIORITY 1: Check for freezer items (frozen keywords)
   for (const keyword of freezerKeywords) {
     if (normalized.includes(keyword)) {
       return { storage: 'Freezer', reason: 'frozen item' };
     }
   }
 
-  // Check for cupboard exceptions
+  // PRIORITY 2: Check for cupboard exceptions (room temp items)
   for (const exception of cupboardExceptions) {
     if (normalized.includes(exception)) {
       return { storage: 'Cupboard', reason: 'best stored at room temperature' };
     }
   }
 
-  // Meat & Protein special case
-  if (category === 'Meat & Protein') {
-    // Check if it mentions frozen or large quantity
-    if (normalized.includes('kg') || normalized.includes('kilogram')) {
-      return { storage: 'Freezer', reason: 'large quantity, better frozen' };
-    }
-    return { storage: 'Fridge', reason: 'perishable protein' };
+  // PRIORITY 3: Category-specific rules
+  switch (category) {
+    case 'Milk & Dairy':
+      return { storage: 'Fridge', reason: 'perishable dairy product' };
+
+    case 'Vegetables & Fruits':
+      // Already handled cupboard exceptions above (banana, potato, onion, tomato)
+      return { storage: 'Fridge', reason: 'keep fresh produce cool' };
+
+    case 'Meat & Protein':
+      // Check for frozen mentions first (already done above)
+      // Check for large quantities suggesting freezer storage
+      if (normalized.includes('kg') || normalized.includes('kilogram') || 
+          normalized.match(/\d+\s*kg/) || normalized.match(/[5-9]\d{2,}\s*g/)) {
+        return { storage: 'Freezer', reason: 'large quantity, better frozen' };
+      }
+      return { storage: 'Fridge', reason: 'perishable protein' };
+
+    case 'Beverages':
+      // Check if unopened/packaged beverages
+      if (normalized.includes('unopened') || normalized.includes('sealed') || 
+          normalized.includes('pack') || normalized.includes('bottle') ||
+          normalized.includes('can') || normalized.includes('soda') ||
+          normalized.includes('juice box')) {
+        return { storage: 'Pantry', reason: 'unopened beverage' };
+      }
+      return { storage: 'Fridge', reason: 'best served cold' };
+
+    case 'Grains & Cereals':
+      return { storage: 'Pantry', reason: 'dry grain storage' };
+
+    case 'Condiments & Sauces':
+      // Check for items that need refrigeration after opening
+      if (normalized.includes('mayo') || normalized.includes('mayonnaise') ||
+          normalized.includes('ketchup') || normalized.includes('opened')) {
+        return { storage: 'Fridge', reason: 'keep fresh after opening' };
+      }
+      // Dry spices go to cupboard
+      if (normalized.includes('powder') || normalized.includes('spice') ||
+          normalized.includes('masala') || normalized.includes('haldi') ||
+          normalized.includes('mirch') || normalized.includes('turmeric')) {
+        return { storage: 'Cupboard', reason: 'dry spice storage' };
+      }
+      return { storage: 'Pantry', reason: 'shelf-stable condiment' };
+
+    case 'Snacks':
+      return { storage: 'Cupboard', reason: 'shelf-stable snack' };
+
+    default:
+      return { storage: 'Pantry', reason: 'general storage' };
   }
-
-  const defaultStorage = storageRules[category] || 'Pantry';
-  
-  const reasons: Record<string, string> = {
-    'Fridge': category === 'Milk & Dairy' ? 'perishable dairy' : 
-              category === 'Vegetables & Fruits' ? 'fresh produce' : 
-              category === 'Beverages' ? 'best served cold' : 'perishable',
-    'Freezer': 'long-term storage',
-    'Pantry': 'dry storage item',
-    'Cupboard': 'shelf-stable snack'
-  };
-
-  return { storage: defaultStorage, reason: reasons[defaultStorage] || 'recommended' };
 }
 
 // Get placeholder text based on category
