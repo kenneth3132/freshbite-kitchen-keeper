@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, CheckCircle2, Sparkles } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, CheckCircle2, Sparkles, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -392,6 +392,22 @@ export default function Inventory() {
             <DialogTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Camera Feature Placeholder */}
+            <div className="bg-secondary/50 rounded-lg p-4 border-2 border-dashed border-border">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                📸 Camera feature coming soon
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Soon you'll be able to scan product barcodes!
+              </p>
+            </div>
+
             <div>
               <Label htmlFor="name">Product Name *</Label>
               <Input

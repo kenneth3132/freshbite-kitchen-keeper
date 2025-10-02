@@ -1,4 +1,4 @@
-import { Home, Package, ChefHat, Calendar, ShoppingCart } from 'lucide-react';
+import { Home, Package, ChefHat, Calendar, ShoppingCart, Settings } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -7,7 +7,7 @@ const navItems = [
   { icon: Package, label: 'Inventory', path: '/inventory' },
   { icon: ChefHat, label: 'Recipes', path: '/recipes' },
   { icon: Calendar, label: 'Meal Plan', path: '/meal-plan' },
-  { icon: ShoppingCart, label: 'Shopping', path: '/shopping' },
+  { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
 export function BottomNav() {
