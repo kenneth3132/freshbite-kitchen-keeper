@@ -93,24 +93,33 @@ export function detectCategory(productName: string): CategoryResult {
 
   const normalized = productName.toLowerCase().trim();
   
-  // Check custom mappings first (learned preferences)
+  // Check custom mappings first (learned preferences - highest priority)
   const customMappings = getCustomMappings();
   if (customMappings[normalized]) {
     return { category: customMappings[normalized], confidence: 'high', matchedKeyword: 'learned' };
   }
 
-  // Split into words for multi-word matching
+  // PRIORITY 1: Check for exact matches
+  for (const [category, keywords] of Object.entries(categoryKeywords)) {
+    for (const keyword of keywords) {
+      if (normalized === keyword) {
+        return { category, confidence: 'high', matchedKeyword: keyword };
+      }
+    }
+  }
+
+  // PRIORITY 2: Split into words for multi-word matching
   const words = normalized.split(/\s+/);
   const matches: { category: string; word: string; position: number }[] = [];
 
-  // Check each category's keywords
+  // Check each word against category keywords (partial matching)
   for (const [category, keywords] of Object.entries(categoryKeywords)) {
     for (let i = 0; i < words.length; i++) {
       const word = words[i];
       for (const keyword of keywords) {
         if (word.includes(keyword) || keyword.includes(word)) {
           matches.push({ category, word, position: i });
-          break;
+          break; // Only count one match per word per category
         }
       }
     }
@@ -126,10 +135,14 @@ export function detectCategory(productName: string): CategoryResult {
     return { category: matches[0].category, confidence: 'high', matchedKeyword: matches[0].word };
   }
 
-  // Multiple matches - prioritize first word's category
-  matches.sort((a, b) => a.position - b.position);
-  
-  // Tie-breaker order
+  // PRIORITY 3: Multiple matches - Multi-word intelligence
+  // Tie-breaker Rule 1: Prefer the first word's category
+  const firstWordMatch = matches.find(m => m.position === 0);
+  if (firstWordMatch) {
+    return { category: firstWordMatch.category, confidence: 'high', matchedKeyword: firstWordMatch.word };
+  }
+
+  // Tie-breaker Rule 2: Use category priority order
   const priorityOrder = [
     'Meat & Protein',
     'Milk & Dairy',
@@ -141,13 +154,6 @@ export function detectCategory(productName: string): CategoryResult {
     'Others'
   ];
 
-  // If first word has a match, use it
-  const firstWordMatch = matches.find(m => m.position === 0);
-  if (firstWordMatch) {
-    return { category: firstWordMatch.category, confidence: 'high', matchedKeyword: firstWordMatch.word };
-  }
-
-  // Use priority order
   for (const priority of priorityOrder) {
     const match = matches.find(m => m.category === priority);
     if (match) {
@@ -155,6 +161,7 @@ export function detectCategory(productName: string): CategoryResult {
     }
   }
 
+  // Fallback to first match with low confidence
   return { category: matches[0].category, confidence: 'low', matchedKeyword: matches[0].word };
 }
 
