@@ -33,7 +33,8 @@ export interface UserPreferences {
   gender: 'male' | 'female';
   activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
   goal: 'maintain' | 'lose' | 'gain';
-  preferredDiet: 'balanced' | 'protein_rich' | 'bulking' | 'keto' | 'low_carb' | 'vegetarian';
+  preferredDiet: 'balanced' | 'protein_rich' | 'keto' | 'low_carb' | 'vegetarian' | 'vegan' | 'paleo' | 'mediterranean' | 'dash' | 'gluten_free' | 'whole30' | 'intermittent_fasting' | 'bulking';
+  preferredCuisine?: string;
 }
 
 export interface Recipe {
@@ -48,6 +49,8 @@ export interface Recipe {
   carbs: number;
   fats: number;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  cuisine: string;
+  dietTypes: string[];
   ingredients: RecipeIngredient[];
   instructions: string[];
   image?: string;

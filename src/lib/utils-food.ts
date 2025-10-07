@@ -88,6 +88,13 @@ export function calculateMacros(
     keto: { protein: 0.3, carbs: 0.05, fats: 0.65 },
     low_carb: { protein: 0.35, carbs: 0.2, fats: 0.45 },
     vegetarian: { protein: 0.25, carbs: 0.45, fats: 0.3 },
+    vegan: { protein: 0.25, carbs: 0.5, fats: 0.25 },
+    paleo: { protein: 0.3, carbs: 0.4, fats: 0.3 },
+    mediterranean: { protein: 0.2, carbs: 0.45, fats: 0.35 },
+    dash: { protein: 0.25, carbs: 0.55, fats: 0.2 },
+    gluten_free: { protein: 0.3, carbs: 0.4, fats: 0.3 },
+    whole30: { protein: 0.3, carbs: 0.35, fats: 0.35 },
+    intermittent_fasting: { protein: 0.3, carbs: 0.4, fats: 0.3 },
   };
 
   const ratios = macroRatios[dietType] || macroRatios.balanced;
