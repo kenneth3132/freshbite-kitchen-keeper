@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, TrendingUp, AlertCircle, Clock, Package as PackageIcon } from 'lucide-react';
+import { TrendingUp, AlertCircle, Clock, Package as PackageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExpiryBadge } from '@/components/ExpiryBadge';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { StorageIcon } from '@/components/StorageIcon';
+import { FloatingActionButtons } from '@/components/FloatingActionButtons';
 import { storage } from '@/lib/storage';
 import { mockFoodItems, mockRecipes } from '@/lib/mockData';
 import { FoodItem } from '@/lib/types';
@@ -61,6 +62,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <FloatingActionButtons />
       {/* Header */}
       <header className="bg-gradient-fresh text-primary-foreground px-4 py-6">
         <h1 className="text-2xl font-bold">Welcome to Freshbite</h1>
@@ -175,28 +177,6 @@ export default function Dashboard() {
         )}
       </section>
 
-      {/* Quick Actions */}
-      <section className="px-4 mt-6">
-        <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
-        <div className="space-y-2">
-          <Link to="/inventory">
-            <Button className="w-full h-12 text-base font-semibold shadow-colored">
-              <Plus className="h-5 w-5 mr-2" />
-              Add Item
-            </Button>
-          </Link>
-          <Link to="/inventory">
-            <Button variant="outline" className="w-full h-12 text-base">
-              View All Inventory
-            </Button>
-          </Link>
-          <Link to="/recipes">
-            <Button variant="outline" className="w-full h-12 text-base">
-              Get Recipe Suggestions
-            </Button>
-          </Link>
-        </div>
-      </section>
 
       {/* Today's Meal Suggestion */}
       <section className="px-4 mt-6 mb-6">
